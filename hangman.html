@@ -2,151 +2,455 @@
 <html>
 <head>
     <title>행맨 게임</title>
-    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
+            line-height: 1.6;
         }
+        
         .game-container {
             background-color: white;
-            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .hangman-container {
+            width: 100%;
+            max-width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+            text-align: center;
+        }
+        
+        .hangman {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
         .word-display {
-            font-size: 24px;
-            letter-spacing: 5px;
+            font-size: 2em;
+            letter-spacing: 0.5em;
             margin: 20px 0;
-            text-align: center;
+            font-family: monospace;
+            min-height: 1.5em;
         }
+        
+        .hint {
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+            min-height: 1.5em;
+        }
+        
+        .attempts {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
         .input-container {
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin: 20px 0;
         }
-        input {
-            font-size: 18px;
-            padding: 5px;
+        
+        #guess-input {
+            padding: 10px;
             width: 50px;
             text-align: center;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 5px;
         }
+        
         button {
+            padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
-            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1em;
+            transition: background-color 0.3s;
         }
+        
         button:hover {
             background-color: #45a049;
         }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .hint-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #hint-button {
+            background-color: #2196F3;
+        }
+        
+        #hint-button:hover {
+            background-color: #0b7dda;
+        }
+        
         .message {
+            text-align: center;
+            min-height: 1.5em;
             margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
+            font-weight: bold;
         }
-        .error {
-            background-color: #ffebee;
-            color: #c62828;
-        }
+        
         .success {
-            background-color: #e8f5e9;
             color: #2e7d32;
+        }
+        
+        .error {
+            color: #d32f2f;
+        }
+        
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #restart-button {
+            background-color: #ff9800;
+        }
+        
+        #restart-button:hover {
+            background-color: #e68a00;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>행맨 게임</h1>
-        <div id="word-display" class="word-display"></div>
-        <div class="input-container">
-            <input type="text" id="letter-input" maxlength="1" placeholder="글자 입력">
-            <button id="submit-btn">입력</button>
+        <div class="hangman-container">
+            <svg id="hangman-svg" width="100%" height="100%" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Gallows -->
+                <rect x="40" y="40" width="180" height="10" fill="#5D4037" rx="2"/>
+                <rect x="50" y="40" width="10" height="250" fill="#5D4037" rx="2"/>
+                <rect x="50" y="280" width="150" height="10" fill="#5D4037" rx="2"/>
+                <rect x="180" y="40" width="10" height="40" fill="#5D4037" rx="2"/>
+                
+                <!-- Rope -->
+                <rect x="185" y="80" width="4" height="30" fill="#8D6E63"/>
+                
+                <!-- Hangman Parts (initially hidden) -->
+                <g id="hangman-parts">
+                    <!-- Head (얼굴 전체) -->
+                    <circle id="head" cx="187" cy="115" r="25" fill="none" stroke="#333" stroke-width="3" style="display: none;"/>
+                    <!-- Face features (displayed with head) -->
+                    <circle id="left-eye" cx="175" cy="110" r="3" fill="#333" style="display: none;"/>
+                    <circle id="right-eye" cx="200" cy="110" r="3" fill="#333" style="display: none;"/>
+                    <path id="mouth" d="M175 130 Q187 140 200 130" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" style="display: none;"/>
+                    
+                    <!-- Body (몸통) -->
+                    <line id="body" x1="187" y1="140" x2="187" y2="220" stroke="#333" stroke-width="4" stroke-linecap="round" style="display: none;"/>
+                    
+                    <!-- Arms (팔) - 더 길고 자연스럽게 -->
+                    <line id="left-arm" x1="187" y1="165" x2="137" y2="215" stroke="#333" stroke-width="4" stroke-linecap="round" style="display: none;"/>
+                    <line id="right-arm" x1="187" y1="165" x2="237" y2="215" stroke="#333" stroke-width="4" stroke-linecap="round" style="display: none;"/>
+                    
+                    <!-- Legs (다리) - 더 길고 사선으로 -->
+                    <line id="left-leg" x1="187" y1="220" x2="157" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round" style="display: none;"/>
+                    <line id="right-leg" x1="187" y1="220" x2="217" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round" style="display: none;"/>
+                </g>
+            </svg>
         </div>
+        
+        <div class="game-info">
+            <div id="word-display" class="word-display"></div>
+            <div id="hint-display" class="hint"></div>
+            <div id="attempts" class="attempts"></div>
+            <div id="guessed-letters" class="guessed-letters"></div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="guess-input" maxlength="1" placeholder="글자 입력" autofocus>
+            <button id="guess-button">입력</button>
+        </div>
+        
+        <div class="hint-container">
+            <button id="hint-button">힌트 보기</button>
+            <button id="restart-button">다시 시작</button>
+        </div>
+        
         <div id="message" class="message"></div>
-        <div id="attempts">남은 시도 횟수: 6</div>
     </div>
 
-    <py-script>
-import random
+    <script>
+        // Game state
+        const words = [
+            { word: 'apple', hint: '과일' },
+            { word: 'house', hint: '건물' },
+            { word: 'water', hint: '액체' },
+            { word: 'music', hint: '소리' },
+            { word: 'happy', hint: '감정' },
+            { word: 'computer', hint: '전자기기' },
+            { word: 'book', hint: '독서' },
+            { word: 'school', hint: '교육 기관' },
+            { word: 'guitar', hint: '악기' },
+            { word: 'pizza', hint: '음식' }
+        ];
+        
+        // Hangman parts to show on wrong attempts (in order)
+        const hangmanParts = [
+            // 얼굴 전체 (한 번에 보여주기)
+            'head',
+            // 몸통
+            'body',
+            // 팔
+            'left-arm', 'right-arm',
+            // 다리
+            'left-leg', 'right-leg'
+        ];
+        
+        // Face features (displayed with head)
+        const faceFeatures = [
+            'left-eye', 'right-eye', 'mouth'
+        ];
 
-words = [
-    {"word": "apple", "hint": "fruits"},
-    {"word": "house", "hint": "building"},
-    {"word": "water", "hint": "liquid"},
-    {"word": "music", "hint": "sound"},
-    {"word": "happy", "hint": "emotion"}
-]
+        // Game state variables
+        let currentWord = '';
+        let currentHint = '';
+        let currentWordDisplay = '';
+        let remainingAttempts = 6;
+        let guessedLetters = [];
+        let currentPart = 0;
+        let gameOver = false;
+        let guessedWord = []; // 단어 추측 상태를 저장하는 배열
 
-selected = random.choice(words)
-ok = selected["word"]
-hint = selected["hint"]
-attempts = 6
-display = ["_"] * len(ok)
-hint_shown = False
-correct_letters = 0
+        // DOM Elements
+        const guessInput = document.getElementById('guess-input');
+        const guessButton = document.getElementById('guess-button');
+        const hintButton = document.getElementById('hint-button');
+        const restartButton = document.getElementById('restart-button');
+        const guessedLettersDisplay = document.getElementById('guessed-letters');
+        const wordDisplay = document.getElementById('word-display');
+        const hintDisplay = document.getElementById('hint-display');
+        const attemptsDisplay = document.getElementById('attempts');
+        const messageDisplay = document.getElementById('message');
 
-def update_display():
-    word_display = document.getElementById("word-display")
-    word_display.innerText = " ".join(display)
+        // Game functions
+        function updateGuessedLetters() {
+            if (guessedLettersDisplay) {
+                guessedLettersDisplay.textContent = `추측한 글자: ${guessedLetters.join(' ')}`;
+            }
+        }
 
-def update_attempts():
-    attempts_display = document.getElementById("attempts")
-    attempts_display.innerText = f"남은 시도 횟수: {attempts}"
+        function initGame() {
+            currentWord = words[Math.floor(Math.random() * words.length)].word;
+            currentHint = words.find(w => w.word === currentWord).hint;
+            currentWordDisplay = '_'.repeat(currentWord.length);
+            guessedLetters = [];
+            currentPart = 0;
+            gameOver = false;
+            remainingAttempts = 6;
+            
+            // Reset display
+            if (wordDisplay) wordDisplay.textContent = currentWordDisplay;
+            if (hintDisplay) hintDisplay.textContent = `힌트: ${currentHint}`;
+            if (attemptsDisplay) attemptsDisplay.textContent = `남은 시도 횟수: ${remainingAttempts}`;
+            if (guessedLettersDisplay) guessedLettersDisplay.textContent = '추측한 글자: ';
+            
+            // Reset hangman
+            const svg = document.getElementById('hangman-svg');
+            if (svg) {
+                const svgDoc = svg.contentDocument || svg;
+                const parts = svgDoc.getElementById('hangman-parts');
+                if (parts) {
+                    parts.style.display = 'none';
+                    
+                    // Hide all parts
+                    hangmanParts.forEach(part => {
+                        const partElement = svgDoc.querySelector('#' + part);
+                        if (partElement) {
+                            partElement.style.display = 'none';
+                        }
+                    });
+                    
+                    // Hide face features
+                    faceFeatures.forEach(feature => {
+                        const featureElement = svgDoc.querySelector('#' + feature);
+                        if (featureElement) {
+                            featureElement.style.display = 'none';
+                        }
+                    });
+                }
+            }
+        }
 
-def show_message(message, is_error=False):
-    message_div = document.getElementById("message")
-    message_div.innerText = message
-    message_div.className = "message " + ("error" if is_error else "success")
+        function updateGuessedLetters() {
+            if (guessedLettersDisplay) {
+                guessedLettersDisplay.textContent = `추측한 글자: ${guessedLetters.join(' ')}`;
+            }
+        }
 
-def check_letter(letter):
-    global attempts, correct_letters, hint_shown
-    
-    if len(letter) != 1 or not letter.isalpha():
-        show_message("한 글자의 알파벳만 입력해주세요!", True)
-        return
-    
-    found = False
-    for i in range(len(ok)):
-        if letter == ok[i]:
-            if display[i] == "_":
-                correct_letters += 1
-            display[i] = letter
-            found = True
-    
-    if not found:
-        attempts -= 1
-        show_message(f"틀렸습니다! 남은 시도 횟수: {attempts}", True)
-    
-    if correct_letters >= 2 and not hint_shown:
-        show_message(f"힌트: {hint}")
-        hint_shown = True
-    
-    update_display()
-    update_attempts()
-    
-    if "_" not in display:
-        show_message(f"축하합니다! 정답은 '{ok}'입니다!")
-        document.getElementById("submit-btn").disabled = True
-    elif attempts == 0:
-        show_message(f"아쉽네요! 정답은 '{ok}'였습니다.", True)
-        document.getElementById("submit-btn").disabled = True
+        function updateGuessedLetters() {
+            guessedLettersDisplay.textContent = `추측한 글자: ${guessedLetters.join(' ')}`;
+        }
 
-def on_submit(event):
-    letter = document.getElementById("letter-input").value.lower()
-    document.getElementById("letter-input").value = ""
-    check_letter(letter)
+        function updateWordDisplay() {
+            currentWordDisplay = currentWord.split('').map(letter => 
+                guessedLetters.includes(letter.toLowerCase()) ? letter : '_'
+            ).join(' ');
+            if (wordDisplay) wordDisplay.textContent = currentWordDisplay;
+        }
 
-document.getElementById("submit-btn").addEventListener("click", on_submit)
-document.getElementById("letter-input").addEventListener("keypress", lambda e: on_submit(e) if e.key == "Enter" else None)
+        function updateDisplay() {
+            if (wordDisplay) wordDisplay.textContent = currentWordDisplay;
+            if (hintDisplay) hintDisplay.textContent = `힌트: ${currentHint}`;
+            if (attemptsDisplay) attemptsDisplay.textContent = `남은 시도 횟수: ${remainingAttempts}`;
+        }
 
-update_display()
-    </py-script>
+        function showMessage(msg, isError = false) {
+            messageDisplay.textContent = msg;
+            messageDisplay.className = 'message ' + (isError ? 'error' : 'success');
+        }
+
+        function showHangmanPart(partIndex) {
+            const svg = document.getElementById('hangman-svg');
+            if (svg) {
+                const svgDoc = svg.contentDocument || svg;
+                const parts = svgDoc.getElementById('hangman-parts');
+                if (parts) {
+                    parts.style.display = 'block';
+                    
+                    // Show face features with head if it's the first part
+                    if (partIndex === 0) {
+                        faceFeatures.forEach(feature => {
+                            const featureElement = svgDoc.querySelector('#' + feature);
+                            if (featureElement) {
+                                featureElement.style.display = 'block';
+                            }
+                        });
+                    }
+                    
+                    const partToShow = hangmanParts[partIndex];
+                    if (partToShow) {
+                        const partElement = svgDoc.querySelector('#' + partToShow);
+                        if (partElement) {
+                            partElement.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkGuess() {
+            
+        const guess = guessInput.value.toLowerCase();
+        if (guess.length !== 1) return;
+
+        if (guessedLetters.includes(guess)) {
+            showMessage('이미 추측한 글자입니다!', true);
+            return;
+        }
+
+        guessedLetters.push(guess);
+        updateGuessedLetters();
+
+        if (currentWord.toLowerCase().includes(guess)) {
+            updateWordDisplay();
+            if (!currentWordDisplay.includes('_')) {
+                showMessage('축하합니다! 단어를 맞추셨습니다!', false);
+                gameOver = true;
+                guessInput.disabled = true;
+            }
+        } else {
+            remainingAttempts--;
+            if (remainingAttempts >= 0) {
+                showHangmanPart(currentPart);
+                currentPart++;
+                updateDisplay();
+                    
+                if (remainingAttempts > 0) {
+                    showMessage(`틀렸습니다! 남은 시도 횟수: ${remainingAttempts}`, true);
+                } else {
+                    gameOver = true;
+                    showMessage(`게임 오버! 정답은 '${currentWord}'였습니다.`, true);
+                    guessInput.disabled = true;
+                        
+                    // Show sad face
+                    const svg = document.getElementById('hangman-svg');
+                    if (svg) {
+                        const svgDoc = svg.contentDocument || svg;
+                        const mouth = svgDoc.getElementById('mouth');
+                        if (mouth) {
+                            mouth.setAttribute('d', 'M175 135 Q187 145 200 135');
+                        }
+                    }
+                }
+            }
+        }
+        guessInput.value = '';
+    }
+
+    function showHint() {
+        if (!hintShown) {
+            hintDisplay.textContent = `💡 힌트: ${currentHint}`;
+                hintButton.disabled = true;
+            }
+        }
+
+        function resetGame() {
+            initGame();
+            guessButton.disabled = false;
+            guessInput.disabled = false;
+            hintButton.disabled = false;
+            hintDisplay.textContent = '';
+            
+            // Reset mouth to neutral
+            const mouth = document.getElementById('mouth');
+            if (mouth) {
+                mouth.setAttribute('d', 'M175 125 Q187 135 200 125');
+            }
+            
+            // Focus on input
+            guessInput.focus();
+        }
+
+        // Initialize game when the page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
+            guessButton.addEventListener('click', checkGuess);
+            hintButton.addEventListener('click', showHint);
+            restartButton.addEventListener('click', resetGame);
+            
+            // Handle Enter key in input field
+            guessInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkGuess();
+                }
+            });
+            
+            // Start the game
+            resetGame();
+        });
+    </script>
 </body>
-</html> 
+</html>

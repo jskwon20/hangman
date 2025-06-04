@@ -1,0 +1,32 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gallows -->
+  <rect x="40" y="40" width="180" height="10" fill="#5D4037" rx="2"/>
+  <rect x="50" y="40" width="10" height="250" fill="#5D4037" rx="2"/>
+  <rect x="50" y="280" width="150" height="10" fill="#5D4037" rx="2"/>
+  <rect x="180" y="40" width="10" height="40" fill="#5D4037" rx="2"/>
+  
+  <!-- Rope -->
+  <rect x="185" y="80" width="4" height="30" fill="#8D6E63"/>
+  
+  <!-- Hangman Parts (initially hidden) -->
+  <g id="hangman-parts" style="display: none;">
+    <!-- Head -->
+    <circle cx="187" cy="115" r="20" fill="none" stroke="#333" stroke-width="3"/>
+    
+    <!-- Body -->
+    <line x1="187" y1="135" x2="187" y2="205" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Arms -->
+    <line x1="187" y1="155" x2="157" y2="185" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="187" y1="155" x2="217" y2="185" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Legs -->
+    <line x1="187" y1="205" x2="157" y2="245" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="187" y1="205" x2="217" y2="245" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Face -->
+    <circle cx="177" cy="110" r="2" fill="#333"/>
+    <circle cx="197" cy="110" r="2" fill="#333"/>
+    <path d="M175 125 Q187 135 200 125" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
