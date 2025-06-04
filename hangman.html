@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>행맨 게임</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .word-display {
+            font-size: 24px;
+            letter-spacing: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .input-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        input {
+            font-size: 18px;
+            padding: 5px;
+            width: 50px;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>행맨 게임</h1>
+        <div id="word-display" class="word-display"></div>
+        <div class="input-container">
+            <input type="text" id="letter-input" maxlength="1" placeholder="글자 입력">
+            <button id="submit-btn">입력</button>
+        </div>
+        <div id="message" class="message"></div>
+        <div id="attempts">남은 시도 횟수: 6</div>
+    </div>
+
+    <py-script>
+import random
+
+words = [
+    {"word": "apple", "hint": "fruits"},
+    {"word": "house", "hint": "building"},
+    {"word": "water", "hint": "liquid"},
+    {"word": "music", "hint": "sound"},
+    {"word": "happy", "hint": "emotion"}
+]
+
+selected = random.choice(words)
+ok = selected["word"]
+hint = selected["hint"]
+attempts = 6
+display = ["_"] * len(ok)
+hint_shown = False
+correct_letters = 0
+
+def update_display():
+    word_display = document.getElementById("word-display")
+    word_display.innerText = " ".join(display)
+
+def update_attempts():
+    attempts_display = document.getElementById("attempts")
+    attempts_display.innerText = f"남은 시도 횟수: {attempts}"
+
+def show_message(message, is_error=False):
+    message_div = document.getElementById("message")
+    message_div.innerText = message
+    message_div.className = "message " + ("error" if is_error else "success")
+
+def check_letter(letter):
+    global attempts, correct_letters, hint_shown
+    
+    if len(letter) != 1 or not letter.isalpha():
+        show_message("한 글자의 알파벳만 입력해주세요!", True)
+        return
+    
+    found = False
+    for i in range(len(ok)):
+        if letter == ok[i]:
+            if display[i] == "_":
+                correct_letters += 1
+            display[i] = letter
+            found = True
+    
+    if not found:
+        attempts -= 1
+        show_message(f"틀렸습니다! 남은 시도 횟수: {attempts}", True)
+    
+    if correct_letters >= 2 and not hint_shown:
+        show_message(f"힌트: {hint}")
+        hint_shown = True
+    
+    update_display()
+    update_attempts()
+    
+    if "_" not in display:
+        show_message(f"축하합니다! 정답은 '{ok}'입니다!")
+        document.getElementById("submit-btn").disabled = True
+    elif attempts == 0:
+        show_message(f"아쉽네요! 정답은 '{ok}'였습니다.", True)
+        document.getElementById("submit-btn").disabled = True
+
+def on_submit(event):
+    letter = document.getElementById("letter-input").value.lower()
+    document.getElementById("letter-input").value = ""
+    check_letter(letter)
+
+document.getElementById("submit-btn").addEventListener("click", on_submit)
+document.getElementById("letter-input").addEventListener("keypress", lambda e: on_submit(e) if e.key == "Enter" else None)
+
+update_display()
+    </py-script>
+</body>
+</html> 
