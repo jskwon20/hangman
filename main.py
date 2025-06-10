@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 import os
 
 app = FastAPI()
@@ -21,13 +21,6 @@ async def catch_all(full_path: str):
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("static/favicon.ico")
-
-# Serve the HTML file directly for any path
-@app.get("/{path:path}")
-async def catch_all(path: str):
-    with open("hangman.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content, status_code=200)
 
 if __name__ == "__main__":
     import uvicorn
