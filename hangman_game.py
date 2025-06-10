@@ -1,5 +1,6 @@
 import random
 
+
 def play_hangman():
     words = [
         {"word": "apple", "hint": "fruits"},
@@ -49,5 +50,6 @@ def play_hangman():
     else:
         print(f"아쉽네요! 정답은 '{ok}'였습니다.")
 
+
 if __name__ == "__main__":
-    play_hangman() 
+    play_hangman()
